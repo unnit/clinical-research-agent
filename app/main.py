@@ -5,8 +5,9 @@ import structlog
 import logging
 
 from app.config import settings
-from app.clients.pubmed import PubMedClient, PubMedArticle
-from app.clients.clinicaltrials import ClinicalTrialsClient, ClinicalTrial
+from app.graph import graph
+from app.agents.synthesis import EvidenceReport
+from app.agents.pico import PICO
 
 logging.basicConfig(level=settings.log_level)
 log = structlog.get_logger()
@@ -14,31 +15,26 @@ log = structlog.get_logger()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.pubmed = PubMedClient()
-    app.state.trials = ClinicalTrialsClient()
-    log.info("clients_initialized")
+    log.info("app_started", model=settings.llm_model)
     yield
-    await app.state.pubmed.close()
-    await app.state.trials.close()
-    log.info("clients_closed")
+    log.info("app_stopped")
 
 
 app = FastAPI(
     title="Clinical Research Agent",
-    version="0.1.0",
+    version="0.2.0",
     lifespan=lifespan,
 )
 
 
 class ResearchRequest(BaseModel):
     question: str = Field(..., min_length=10, max_length=500)
-    max_results_per_source: int = Field(5, ge=1, le=20)
+    max_per_source: int = Field(8, ge=3, le=20)
 
 
 class ResearchResponse(BaseModel):
-    question: str
-    articles: list[PubMedArticle]
-    trials: list[ClinicalTrial]
+    pico: PICO
+    report: EvidenceReport
     counts: dict
 
 
@@ -49,22 +45,21 @@ async def health():
 
 @app.post("/research", response_model=ResearchResponse)
 async def research(req: ResearchRequest):
-    log.info("research_request", question=req.question)
     try:
-        articles = await app.state.pubmed.search_and_fetch(
-            req.question, max_results=req.max_results_per_source
-        )
-        trials = await app.state.trials.search(
-            req.question, max_results=req.max_results_per_source
-        )
+        result = await graph.ainvoke({
+            "question": req.question,
+            "max_per_source": req.max_per_source,
+        })
     except Exception as e:
         log.error("research_failed", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
     return ResearchResponse(
-        question=req.question,
-        articles=articles,
-        trials=trials,
-        counts={"articles": len(articles), "trials": len(trials)},
+        pico=result["pico"],
+        report=result["report"],
+        counts={
+            "articles_found": len(result.get("articles", [])),
+            "trials_found": len(result.get("trials", [])),
+            "items_synthesized": len(result["report"].citations),
+        },
     )
-

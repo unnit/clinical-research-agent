@@ -1,7 +1,10 @@
-import httpx
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry, stop_after_attempt, wait_exponential, before_sleep_log, retry_if_exception_type
 from pydantic import BaseModel
 from typing import Optional
+import httpx
+import logging
+
+logger = logging.getLogger(__name__)
 
 BASE_URL = "https://clinicaltrials.gov/api/v2"
 
@@ -24,7 +27,12 @@ class ClinicalTrialsClient:
     def __init__(self):
         self.client = httpx.AsyncClient(timeout=30.0)
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(min=1, max=10),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+        reraise=True,
+    )
     async def search(self, query: str, max_results: int = 10) -> list[ClinicalTrial]:
         resp = await self.client.get(
             f"{BASE_URL}/studies",

@@ -8,3 +8,6 @@ tenacity
 structlog
 pytest
 pytest-asyncio
+langgraph
+langchain-core
+litellm
