@@ -7,6 +7,7 @@ from app.clients.clinicaltrials import ClinicalTrialsClient, ClinicalTrial
 from app.agents.pico import decompose, PICO
 from app.agents.screening import screen
 from app.agents.synthesis import synthesize, EvidenceReport
+from app.agents.factcheck import factcheck, FactCheckResult
 
 log = structlog.get_logger()
 
@@ -19,6 +20,7 @@ class ResearchState(TypedDict, total=False):
     trials: list[ClinicalTrial]
     relevance: dict[str, int]
     report: EvidenceReport
+    factcheck: FactCheckResult
 
 
 async def node_decompose(state: ResearchState) -> ResearchState:
@@ -108,6 +110,14 @@ async def node_synthesize(state: ResearchState) -> ResearchState:
     report = await synthesize(state["question"], top_articles, top_trials)
     return {"report": report}
 
+async def node_factcheck(state: ResearchState) -> ResearchState:
+    result = factcheck(
+        state["report"],
+        state.get("articles", []),
+        state.get("trials", []),
+    )
+    return {"factcheck": result}
+
 
 def build_graph():
     g = StateGraph(ResearchState)
@@ -115,12 +125,14 @@ def build_graph():
     g.add_node("search", node_search)
     g.add_node("screen", node_screen)
     g.add_node("synthesize", node_synthesize)
+    g.add_node("factcheck", node_factcheck)
 
     g.add_edge(START, "decompose")
     g.add_edge("decompose", "search")
     g.add_edge("search", "screen")
     g.add_edge("screen", "synthesize")
-    g.add_edge("synthesize", END)
+    g.add_edge("synthesize", "factcheck")
+    g.add_edge("factcheck", END)
 
     return g.compile()
 

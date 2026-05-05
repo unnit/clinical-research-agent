@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from app.llm import structured
 from app.clients.pubmed import PubMedArticle
 from app.clients.clinicaltrials import ClinicalTrial
@@ -6,8 +6,13 @@ from app.clients.clinicaltrials import ClinicalTrial
 
 class ScreenedItem(BaseModel):
     id: str
-    relevance: int = Field(..., ge=0, le=10, description="0=irrelevant, 10=highly relevant")
-    reason: str = Field(..., max_length=200)
+    relevance: int = Field(..., ge=0, le=10)
+    reason: str = Field(..., description="Brief justification, ideally under 200 chars")
+
+    @field_validator("reason")
+    @classmethod
+    def truncate_reason(cls, v: str) -> str:
+        return v[:300] if len(v) > 300 else v
 
 
 class ScreeningResult(BaseModel):
@@ -22,7 +27,9 @@ Scoring:
 - 3-5: Tangentially related
 - 0-2: Off-topic
 
-Be strict — most items should score 5-7."""
+Rules:
+- Be strict — most items should score 5-7.
+- Keep "reason" to one short sentence, under 30 words."""
 
 
 def _format_articles(articles: list[PubMedArticle]) -> str:

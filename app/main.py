@@ -8,6 +8,7 @@ from app.config import settings
 from app.graph import graph
 from app.agents.synthesis import EvidenceReport
 from app.agents.pico import PICO
+from app.agents.factcheck import FactCheckResult
 
 logging.basicConfig(level=settings.log_level)
 log = structlog.get_logger()
@@ -35,6 +36,7 @@ class ResearchRequest(BaseModel):
 class ResearchResponse(BaseModel):
     pico: PICO
     report: EvidenceReport
+    factcheck: FactCheckResult
     counts: dict
 
 
@@ -57,9 +59,12 @@ async def research(req: ResearchRequest):
     return ResearchResponse(
         pico=result["pico"],
         report=result["report"],
+        factcheck=result["factcheck"],
         counts={
             "articles_found": len(result.get("articles", [])),
             "trials_found": len(result.get("trials", [])),
             "items_synthesized": len(result["report"].citations),
+            "valid_citations": len(result["factcheck"].valid_citations),
+            "invalid_citations": len(result["factcheck"].invalid_citations),
         },
     )

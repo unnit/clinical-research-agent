@@ -2,11 +2,11 @@ from pydantic import BaseModel, Field
 from app.llm import structured
 from app.clients.pubmed import PubMedArticle
 from app.clients.clinicaltrials import ClinicalTrial
-
+from typing import Literal
 
 class Citation(BaseModel):
-    id: str
-    source: str  # "pubmed" or "clinicaltrials"
+    id: str = Field(..., description="Just the bare ID: '12345678' for PubMed or 'NCT01234567' for trials")
+    source: Literal["pubmed", "clinicaltrials"]
     title: str
     url: str
 
@@ -22,12 +22,22 @@ class EvidenceReport(BaseModel):
 
 SYSTEM = """You are a clinical evidence synthesizer. Given screened literature, produce a structured evidence summary.
 
-Rules:
-- Every key finding must reference a specific source like [PMID:12345678] or [NCT01234567]
-- Be precise about effect sizes, sample sizes, and confidence intervals when available
-- Grade evidence quality using GRADE-lite: High / Moderate / Low / Very Low
-- State limitations honestly (small samples, short follow-up, etc.)
-- Do NOT invent findings or citations not in the source material"""
+Citation rules (CRITICAL):
+- Cite ONLY sources provided in the input. Do NOT invent PMIDs or NCT IDs.
+- In findings, reference sources EXACTLY as [PMID:12345678] for articles or [NCT01234567] for trials.
+- NEVER mix prefixes — [PMID:NCT...] is invalid. NCT IDs go alone in brackets.
+- For each Citation object:
+  - "id" must be the bare identifier (e.g., "12345678" or "NCT01234567"), not the title or journal
+  - "source" must be exactly "pubmed" OR "clinicaltrials" — nothing else
+  - "title" is the study title
+  - "url" is the full URL
+
+Content rules:
+- Every key finding must reference at least one source
+- Be precise about effect sizes, sample sizes, and confidence intervals when given
+- Grade evidence using GRADE-lite: High / Moderate / Low / Very Low with one-line justification
+- State limitations honestly (small samples, short follow-up, surrogate endpoints, etc.)
+- Do NOT invent findings beyond what the sources support"""
 
 
 def _format_sources(articles: list[PubMedArticle], trials: list[ClinicalTrial]) -> str:
