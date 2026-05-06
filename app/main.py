@@ -9,6 +9,7 @@ from app.graph import graph
 from app.agents.synthesis import EvidenceReport
 from app.agents.pico import PICO
 from app.agents.factcheck import FactCheckResult
+from app.vectorstore import VectorStore
 
 logging.basicConfig(level=settings.log_level)
 log = structlog.get_logger()
@@ -68,3 +69,31 @@ async def research(req: ResearchRequest):
             "invalid_citations": len(result["factcheck"].invalid_citations),
         },
     )
+
+
+@app.get("/library/search")
+async def library_search(q: str, limit: int = 5):
+    """Semantic search over previously-indexed articles."""
+    vs = VectorStore()
+    try:
+        results = await vs.search(q, limit=limit)
+        return {"query": q, "results": results}
+    finally:
+        await vs.close()
+
+
+@app.get("/library/stats")
+async def library_stats():
+    """Cache health stats."""
+    vs = VectorStore()
+    try:
+        await vs.ensure_collection()
+        info = await vs.client.get_collection(collection_name="clinical_articles")
+        return {
+            "collection": "clinical_articles",
+            "indexed_articles": info.points_count,
+            "vector_size": info.config.params.vectors.size,
+            "distance": info.config.params.vectors.distance.value,
+        }
+    finally:
+        await vs.close()
