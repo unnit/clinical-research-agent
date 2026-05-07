@@ -16,6 +16,7 @@ log = structlog.get_logger()
 class ResearchState(TypedDict, total=False):
     question: str
     max_per_source: int
+    trace_id: str
     pico: PICO
     cached_articles: list[PubMedArticle]
     articles: list[PubMedArticle]

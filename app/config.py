@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     pubmed_api_key: str = ""
     pubmed_email: str = ""
 
+    langfuse_public_key: str = ""
+    langfuse_secret_key: str = ""
+    langfuse_host: str = "http://localhost:3000"
+
     log_level: str = "INFO"
 
 

@@ -10,6 +10,7 @@ from app.agents.synthesis import EvidenceReport
 from app.agents.pico import PICO
 from app.agents.factcheck import FactCheckResult
 from app.vectorstore import VectorStore
+from app.tracing import trace_run
 
 logging.basicConfig(level=settings.log_level)
 log = structlog.get_logger()
@@ -48,27 +49,39 @@ async def health():
 
 @app.post("/research", response_model=ResearchResponse)
 async def research(req: ResearchRequest):
-    try:
-        result = await graph.ainvoke({
-            "question": req.question,
-            "max_per_source": req.max_per_source,
-        })
-    except Exception as e:
-        log.error("research_failed", error=str(e))
-        raise HTTPException(status_code=500, detail=str(e))
+    async with trace_run("research", {"question": req.question}) as trace:
+        try:
+            result = await graph.ainvoke({
+                "question": req.question,
+                "max_per_source": req.max_per_source,
+                "trace_id": trace.id if trace else "",
+            })
+        except Exception as e:
+            log.error("research_failed", error=str(e))
+            if trace:
+                trace.update(output={"error": str(e)}, level="ERROR")
+            raise HTTPException(status_code=500, detail=str(e))
 
-    return ResearchResponse(
-        pico=result["pico"],
-        report=result["report"],
-        factcheck=result["factcheck"],
-        counts={
-            "articles_found": len(result.get("articles", [])),
-            "trials_found": len(result.get("trials", [])),
-            "items_synthesized": len(result["report"].citations),
-            "valid_citations": len(result["factcheck"].valid_citations),
-            "invalid_citations": len(result["factcheck"].invalid_citations),
-        },
-    )
+        if trace:
+            trace.update(output={
+                "summary": result["report"].executive_summary,
+                "evidence_quality": result["report"].evidence_quality,
+                "valid_citations": len(result["factcheck"].valid_citations),
+                "invalid_citations": len(result["factcheck"].invalid_citations),
+            })
+
+        return ResearchResponse(
+            pico=result["pico"],
+            report=result["report"],
+            factcheck=result["factcheck"],
+            counts={
+                "articles_found": len(result.get("articles", [])),
+                "trials_found": len(result.get("trials", [])),
+                "items_synthesized": len(result["report"].citations),
+                "valid_citations": len(result["factcheck"].valid_citations),
+                "invalid_citations": len(result["factcheck"].invalid_citations),
+            },
+        )
 
 
 @app.get("/library/search")

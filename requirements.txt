@@ -10,7 +10,8 @@ pytest
 pytest-asyncio
 langgraph
 langchain-core
-litellm
 mcp[cli]
 qdrant-client
 google-genai
+langfuse>=2.50,<3
+litellm>=1.50,<2
