@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from contextlib import contextmanager
 from langfuse import Langfuse
 from app.config import settings
 from app.llm import current_trace_id
@@ -39,3 +40,21 @@ async def trace_run(name: str, input_data: dict):
             client.flush()
         except Exception as e:
             log.warning("langfuse_flush_failed", error=str(e))
+
+
+@contextmanager
+def node_span(name: str, input_data: dict | None = None):
+    """Create a child span on the current trace. No-op if Langfuse disabled."""
+    client = get_client()
+    tid = current_trace_id.get()
+    if client is None or not tid:
+        yield None
+        return
+    span = client.span(trace_id=tid, name=name, input=input_data or {})
+    try:
+        yield span
+    finally:
+        try:
+            span.end()
+        except Exception:
+            pass
