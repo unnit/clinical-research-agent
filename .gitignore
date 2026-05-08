@@ -6,3 +6,6 @@ __pycache__/
 .DS_Store
 *.log
 qdrant_storage/
+eval/results/*
+!eval/results/sample_run.json
+

@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "total": 10,
+    "completed": 2,
+    "completion_rate": 0.2,
+    "avg_citation_validity": 1.0,
+    "avg_source_recall": 0.5,
+    "avg_source_recall_in_report": 0.5
+  },
+  "cases": [
+    {
+      "case_id": "sglt2_hfpef",
+      "completed": true,
+      "citation_validity": 1.0,
+      "source_recall": 0.5,
+      "source_recall_in_report": 0.5,
+      "error": ""
+    },
+    {
+      "case_id": "glp1_obesity",
+      "completed": false,
+      "citation_validity": 0.0,
+      "source_recall": 0.0,
+      "source_recall_in_report": 0.0,
+      "error": "litellm.ServiceUnavailableError: GeminiException - {\n  \"error\": {\n    \"code\": 503,\n    \"message\": \"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\n    \"status\": \"UNAVAILABLE\"\n  }\n}\n"
+    },
+    {
+      "case_id": "metformin_b12",
+      "completed": false,
+      "citation_validity": 0.0,
+      "source_recall": 0.0,
+      "source_recall_in_report": 0.0,
+      "error": "litellm.ServiceUnavailableError: GeminiException - {\n  \"error\": {\n    \"code\": 503,\n    \"message\": \"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\n    \"status\": \"UNAVAILABLE\"\n  }\n}\n"
+    },
+    {
+      "case_id": "statins_primary",
+      "completed": false,
+      "citation_validity": 0.0,
+      "source_recall": 0.0,
+      "source_recall_in_report": 0.0,
+      "error": "1 validation error for ScreeningResult\n  Invalid JSON: key must be a string at line 40 column 5 [type=json_invalid, input_value='{\"items\": [\\n  {\\n    \"i...y prevention.\"\\n  }\\n]}', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.12/v/json_invalid"
+    },
+    {
+      "case_id": "aspirin_primary",
+      "completed": false,
+      "citation_validity": 0.0,
+      "source_recall": 0.0,
+      "source_recall_in_report": 0.0,
+      "error": "litellm.ServiceUnavailableError: GeminiException - {\n  \"error\": {\n    \"code\": 503,\n    \"message\": \"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\n    \"status\": \"UNAVAILABLE\"\n  }\n}\n"
+    },
+    {
+      "case_id": "finerenone_ckd",
+      "completed": true,
+      "citation_validity": 1.0,
+      "source_recall": 0.5,
+      "source_recall_in_report": 0.5,
+      "error": ""
+    },
+    {
+      "case_id": "tirzepatide_t2d",
+      "completed": false,
+      "citation_validity": 0.0,
+      "source_recall": 0.0,
+      "source_recall_in_report": 0.0,
+      "error": "litellm.ServiceUnavailableError: GeminiException - {\n  \"error\": {\n    \"code\": 503,\n    \"message\": \"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\n    \"status\": \"UNAVAILABLE\"\n  }\n}\n"
+    },
+    {
+      "case_id": "rivaroxaban_afib",
+      "completed": false,
+      "citation_validity": 0.0,
+      "source_recall": 0.0,
+      "source_recall_in_report": 0.0,
+      "error": "litellm.ServiceUnavailableError: GeminiException - {\n  \"error\": {\n    \"code\": 503,\n    \"message\": \"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\n    \"status\": \"UNAVAILABLE\"\n  }\n}\n"
+    },
+    {
+      "case_id": "pcsk9_ascvd",
+      "completed": false,
+      "citation_validity": 0.0,
+      "source_recall": 0.0,
+      "source_recall_in_report": 0.0,
+      "error": "litellm.RateLimitError: litellm.RateLimitError: geminiException - {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite\\nPlease retry in 14.144531918s.\",\n    \"status\": \"RESOURCE_EXHAUSTED\",\n    \"details\": [\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.Help\",\n        \"links\": [\n          {\n            \"description\": \"Learn more about Gemini API quotas\",\n            \"url\": \"https://ai.google.dev/gemini-api/docs/rate-limits\"\n          }\n        ]\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.QuotaFailure\",\n        \"violations\": [\n          {\n            \"quotaMetric\": \"generativelanguage.googleapis.com/generate_content_free_tier_requests\",\n            \"quotaId\": \"GenerateRequestsPerDayPerProjectPerModel-FreeTier\",\n            \"quotaDimensions\": {\n              \"location\": \"global\",\n              \"model\": \"gemini-2.5-flash-lite\"\n            },\n            \"quotaValue\": \"20\"\n          }\n        ]\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.RetryInfo\",\n        \"retryDelay\": \"14s\"\n      }\n    ]\n  }\n}\n"
+    },
+    {
+      "case_id": "canagliflozin_ckd",
+      "completed": false,
+      "citation_validity": 0.0,
+      "source_recall": 0.0,
+      "source_recall_in_report": 0.0,
+      "error": "litellm.RateLimitError: litellm.RateLimitError: geminiException - {\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite\\nPlease retry in 12.849353261s.\",\n    \"status\": \"RESOURCE_EXHAUSTED\",\n    \"details\": [\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.Help\",\n        \"links\": [\n          {\n            \"description\": \"Learn more about Gemini API quotas\",\n            \"url\": \"https://ai.google.dev/gemini-api/docs/rate-limits\"\n          }\n        ]\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.QuotaFailure\",\n        \"violations\": [\n          {\n            \"quotaMetric\": \"generativelanguage.googleapis.com/generate_content_free_tier_requests\",\n            \"quotaId\": \"GenerateRequestsPerDayPerProjectPerModel-FreeTier\",\n            \"quotaDimensions\": {\n              \"location\": \"global\",\n              \"model\": \"gemini-2.5-flash-lite\"\n            },\n            \"quotaValue\": \"20\"\n          }\n        ]\n      },\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.RetryInfo\",\n        \"retryDelay\": \"12s\"\n      }\n    ]\n  }\n}\n"
+    }
+  ]
+}
