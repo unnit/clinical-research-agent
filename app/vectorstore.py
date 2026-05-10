@@ -1,12 +1,14 @@
+import hashlib
+import time
+
+import structlog
 from google import genai
 from google.genai import types
 from qdrant_client import AsyncQdrantClient
-from qdrant_client.models import Distance, VectorParams, PointStruct
-from app.config import settings
+from qdrant_client.models import Distance, PointStruct, VectorParams
+
 from app.clients.pubmed import PubMedArticle
-import structlog
-import hashlib
-import time
+from app.config import settings
 
 log = structlog.get_logger()
 
@@ -18,8 +20,8 @@ _genai_client = genai.Client(api_key=settings.gemini_api_key)
 
 
 class VectorStore:
-    def __init__(self, url: str = "http://localhost:6333"):
-        self.client = AsyncQdrantClient(url=url)
+    def __init__(self, url: str | None = None):
+        self.client = AsyncQdrantClient(url=url or settings.qdrant_url)
 
     async def ensure_collection(self):
         collections = await self.client.get_collections()
