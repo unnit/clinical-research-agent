@@ -1,16 +1,20 @@
-from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
-import structlog
+import json
 import logging
+from contextlib import asynccontextmanager
 
+import structlog
+from fastapi import FastAPI, HTTPException, Request
+from pydantic import BaseModel, Field
+from starlette.middleware.base import BaseHTTPMiddleware
+
+from app.agents.factcheck import FactCheckResult
+from app.agents.pico import PICO
+from app.agents.synthesis import EvidenceReport
 from app.config import settings
 from app.graph import graph
-from app.agents.synthesis import EvidenceReport
-from app.agents.pico import PICO
-from app.agents.factcheck import FactCheckResult
-from app.vectorstore import VectorStore
+from app.redaction import redact_payload
 from app.tracing import trace_run
+from app.vectorstore import VectorStore
 
 logging.basicConfig(level=settings.log_level)
 log = structlog.get_logger()
@@ -28,6 +32,40 @@ app = FastAPI(
     version="0.2.0",
     lifespan=lifespan,
 )
+
+class PIIRedactionMiddleware(BaseHTTPMiddleware):
+    """Redact PII from JSON request bodies on routes that handle user input."""
+
+    REDACT_PATHS = {"/research"}  # extend as you add user-facing endpoints
+
+    async def dispatch(self, request: Request, call_next):
+        if request.method != "POST" or request.url.path not in self.REDACT_PATHS:
+            return await call_next(request)
+
+        body = await request.body()
+        if not body:
+            return await call_next(request)
+
+        try:
+            payload = json.loads(body)
+        except json.JSONDecodeError:
+            return await call_next(request)
+
+        redacted_payload, counts = redact_payload(payload)
+        if counts:
+            log.info("pii_redacted", counts=counts, path=request.url.path)
+
+        # Rebuild the request with the redacted body
+        new_body = json.dumps(redacted_payload).encode()
+
+        async def receive():
+            return {"type": "http.request", "body": new_body, "more_body": False}
+
+        request._receive = receive
+        return await call_next(request)
+
+
+app.add_middleware(PIIRedactionMiddleware)
 
 
 class ResearchRequest(BaseModel):
@@ -60,7 +98,7 @@ async def research(req: ResearchRequest):
             log.error("research_failed", error=str(e))
             if trace:
                 trace.update(output={"error": str(e)}, level="ERROR")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
         if trace:
             trace.update(output={

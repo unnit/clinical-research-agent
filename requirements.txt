@@ -15,3 +15,4 @@ qdrant-client
 google-genai
 langfuse>=2.50,<3
 litellm>=1.50,<2
+ruff
