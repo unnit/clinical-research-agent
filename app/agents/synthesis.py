@@ -1,8 +1,11 @@
-from pydantic import BaseModel, Field
-from app.llm import structured
-from app.clients.pubmed import PubMedArticle
-from app.clients.clinicaltrials import ClinicalTrial
 from typing import Literal
+
+from pydantic import BaseModel, Field
+
+from app.clients.clinicaltrials import ClinicalTrial
+from app.clients.pubmed import PubMedArticle
+from app.llm import structured
+
 
 class Citation(BaseModel):
     id: str = Field(..., description="Just the bare ID: '12345678' for PubMed or 'NCT01234567' for trials")

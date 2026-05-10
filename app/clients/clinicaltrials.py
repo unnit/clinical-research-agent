@@ -1,8 +1,9 @@
-from tenacity import retry, stop_after_attempt, wait_exponential, before_sleep_log, retry_if_exception_type
-from pydantic import BaseModel
-from typing import Optional
-import httpx
 import logging
+from typing import Optional
+
+import httpx
+from pydantic import BaseModel
+from tenacity import before_sleep_log, retry, stop_after_attempt, wait_exponential
 
 logger = logging.getLogger(__name__)
 

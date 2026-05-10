@@ -5,9 +5,9 @@ from datetime import datetime
 from pathlib import Path
 
 from app.graph import graph
-from app.tracing import trace_run, get_client
+from app.tracing import get_client, trace_run
 from eval.dataset import DATASET
-from eval.metrics import score_case, CaseScore
+from eval.metrics import CaseScore, score_case
 
 
 async def run_one(case) -> CaseScore:

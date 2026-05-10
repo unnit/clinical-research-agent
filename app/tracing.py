@@ -1,9 +1,10 @@
-from contextlib import asynccontextmanager
-from contextlib import contextmanager
+from contextlib import asynccontextmanager, contextmanager
+
+import structlog
 from langfuse import Langfuse
+
 from app.config import settings
 from app.llm import current_trace_id
-import structlog
 
 log = structlog.get_logger()
 

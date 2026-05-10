@@ -1,5 +1,6 @@
 import pytest
-from mcp_server import pubmed_search, drug_label_lookup, trial_lookup
+
+from mcp_server import drug_label_lookup, pubmed_search, trial_lookup
 
 
 @pytest.mark.asyncio

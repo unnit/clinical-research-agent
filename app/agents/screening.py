@@ -1,7 +1,8 @@
 from pydantic import BaseModel, Field, field_validator
-from app.llm import structured
-from app.clients.pubmed import PubMedArticle
+
 from app.clients.clinicaltrials import ClinicalTrial
+from app.clients.pubmed import PubMedArticle
+from app.llm import structured
 
 
 class ScreenedItem(BaseModel):

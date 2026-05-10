@@ -1,8 +1,9 @@
 from pydantic import BaseModel
-from app.agents.synthesis import EvidenceReport
+
 from app.agents.factcheck import FactCheckResult
-from app.clients.pubmed import PubMedArticle
+from app.agents.synthesis import EvidenceReport
 from app.clients.clinicaltrials import ClinicalTrial
+from app.clients.pubmed import PubMedArticle
 
 
 class CaseScore(BaseModel):

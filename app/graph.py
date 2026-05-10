@@ -1,15 +1,16 @@
 from typing import TypedDict
-from langgraph.graph import StateGraph, START, END
-import structlog
 
-from app.clients.pubmed import PubMedClient, PubMedArticle
-from app.clients.clinicaltrials import ClinicalTrialsClient, ClinicalTrial
-from app.agents.pico import decompose, PICO
+import structlog
+from langgraph.graph import END, START, StateGraph
+
+from app.agents.factcheck import FactCheckResult, factcheck
+from app.agents.pico import PICO, decompose
 from app.agents.screening import screen
-from app.agents.synthesis import synthesize, EvidenceReport
-from app.agents.factcheck import factcheck, FactCheckResult
-from app.vectorstore import VectorStore
+from app.agents.synthesis import EvidenceReport, synthesize
+from app.clients.clinicaltrials import ClinicalTrial, ClinicalTrialsClient
+from app.clients.pubmed import PubMedArticle, PubMedClient
 from app.tracing import node_span
+from app.vectorstore import VectorStore
 
 log = structlog.get_logger()
 

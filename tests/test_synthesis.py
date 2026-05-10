@@ -1,8 +1,9 @@
 import pytest
-from app.clients.pubmed import PubMedClient
-from app.clients.clinicaltrials import ClinicalTrialsClient
+
 from app.agents.screening import screen
 from app.agents.synthesis import synthesize
+from app.clients.clinicaltrials import ClinicalTrialsClient
+from app.clients.pubmed import PubMedClient
 
 
 @pytest.mark.asyncio
@@ -25,7 +26,7 @@ async def test_full_pipeline_minus_orchestration():
         print(f"\n=== {report.question} ===")
         print(f"\nSummary: {report.executive_summary}")
         print(f"\nQuality: {report.evidence_quality}")
-        print(f"\nFindings:")
+        print("\nFindings:")
         for f in report.key_findings:
             print(f"  - {f}")
         print(f"\nCitations: {len(report.citations)}")

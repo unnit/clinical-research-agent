@@ -1,4 +1,5 @@
 import pytest
+
 from app.clients.openfda import OpenFDAClient
 
 

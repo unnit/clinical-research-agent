@@ -1,5 +1,6 @@
 import pytest
 from pydantic import BaseModel
+
 from app.llm import chat, structured
 
 

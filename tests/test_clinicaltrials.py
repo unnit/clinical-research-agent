@@ -1,4 +1,5 @@
 import pytest
+
 from app.clients.clinicaltrials import ClinicalTrialsClient
 
 

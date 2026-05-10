@@ -1,9 +1,11 @@
-from pydantic import BaseModel
-from app.agents.synthesis import EvidenceReport, Citation
-from app.clients.pubmed import PubMedArticle
-from app.clients.clinicaltrials import ClinicalTrial
 import re
+
 import structlog
+from pydantic import BaseModel
+
+from app.agents.synthesis import Citation, EvidenceReport
+from app.clients.clinicaltrials import ClinicalTrial
+from app.clients.pubmed import PubMedArticle
 
 log = structlog.get_logger()
 

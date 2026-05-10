@@ -1,8 +1,10 @@
-import httpx
-from tenacity import retry, stop_after_attempt, wait_exponential
-from pydantic import BaseModel
-from typing import Optional
 import xml.etree.ElementTree as ET
+from typing import Optional
+
+import httpx
+from pydantic import BaseModel
+from tenacity import retry, stop_after_attempt, wait_exponential
+
 from app.config import settings
 
 BASE_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
