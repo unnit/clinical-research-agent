@@ -1,6 +1,10 @@
 import { useState, type SubmitEvent } from "react";
 import { useResearch } from "./useResearch";
 import { AgentRow } from "./AgentRow";
+import { PicoCard } from "./PicoCard";
+import { FindingsList } from "./FindingsList";
+import { FactcheckBanner } from "./FactcheckBanner";
+import { CitationsList } from "./CitationsList";
 
 function App() {
   const [question, setQuestion] = useState("");
@@ -64,20 +68,46 @@ function App() {
         )}
 
         {error && (
-          <div className="rounded-lg border border-rose-900 bg-rose-950/50 px-4 py-3 text-rose-300">
+          <div className="mb-8 rounded-lg border border-rose-900 bg-rose-950/50 px-4 py-3 text-rose-300">
             {error}
           </div>
         )}
 
         {result && (
-          <section className="mt-8 rounded-lg border border-neutral-800 bg-neutral-900/50 p-6">
-            <h2 className="mb-2 text-xl font-semibold">Executive Summary</h2>
-            <p className="text-neutral-300">
-              {result.report.executive_summary}
-            </p>
-            <p className="mt-4 text-sm text-neutral-500">
-              {result.report.evidence_quality}
-            </p>
+          <section className="space-y-6">
+            <PicoCard pico={result.pico} />
+
+            <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-6">
+              <h2 className="mb-3 text-xl font-semibold">Executive Summary</h2>
+              <p className="leading-relaxed text-neutral-200">
+                {result.report.executive_summary}
+              </p>
+              <div className="mt-4 inline-flex items-center gap-2 rounded-md bg-neutral-800 px-3 py-1 text-xs">
+                <span className="text-neutral-400">Evidence quality:</span>
+                <span className="text-neutral-200">
+                  {result.report.evidence_quality}
+                </span>
+              </div>
+            </div>
+
+            <FactcheckBanner factcheck={result.factcheck} />
+
+            <FindingsList findings={result.report.key_findings} />
+
+            {result.report.limitations.length > 0 && (
+              <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-6">
+                <h2 className="mb-3 text-xl font-semibold">Limitations</h2>
+                <ul className="list-inside list-disc space-y-1 text-neutral-300">
+                  {result.report.limitations.map((lim, i) => (
+                    <li key={i} className="leading-relaxed">
+                      {lim}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <CitationsList citations={result.report.citations} />
           </section>
         )}
       </div>
