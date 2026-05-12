@@ -59,25 +59,24 @@ class ClinicalTrialsClient:
 
             nct_id = ident.get("nctId", "")
             phases = design.get("phases", [])
-            interventions = [
-                i.get("name", "") for i in arms.get("interventions", [])
-            ]
+            interventions = [i.get("name", "") for i in arms.get("interventions", [])]
 
-            trials.append(ClinicalTrial(
-                nct_id=nct_id,
-                title=ident.get("briefTitle", ""),
-                status=status.get("overallStatus", ""),
-                phase=", ".join(phases) if phases else None,
-                conditions=cond.get("conditions", []),
-                interventions=interventions,
-                summary=desc.get("briefSummary", ""),
-                enrollment=design.get("enrollmentInfo", {}).get("count"),
-                start_date=status.get("startDateStruct", {}).get("date"),
-                completion_date=status.get("completionDateStruct", {}).get("date"),
-                url=f"https://clinicaltrials.gov/study/{nct_id}" if nct_id else "",
-            ))
+            trials.append(
+                ClinicalTrial(
+                    nct_id=nct_id,
+                    title=ident.get("briefTitle", ""),
+                    status=status.get("overallStatus", ""),
+                    phase=", ".join(phases) if phases else None,
+                    conditions=cond.get("conditions", []),
+                    interventions=interventions,
+                    summary=desc.get("briefSummary", ""),
+                    enrollment=design.get("enrollmentInfo", {}).get("count"),
+                    start_date=status.get("startDateStruct", {}).get("date"),
+                    completion_date=status.get("completionDateStruct", {}).get("date"),
+                    url=f"https://clinicaltrials.gov/study/{nct_id}" if nct_id else "",
+                )
+            )
         return trials
 
     async def close(self):
         await self.client.aclose()
-

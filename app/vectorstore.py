@@ -62,18 +62,20 @@ class VectorStore:
                 continue
             text = f"{a.title}\n\n{a.abstract}"
             vec = self._embed(text)
-            points.append(PointStruct(
-                id=self._pmid_to_uuid(a.pmid),
-                vector=vec,
-                payload={
-                    "pmid": a.pmid,
-                    "title": a.title,
-                    "abstract": a.abstract,
-                    "journal": a.journal,
-                    "year": a.year,
-                    "indexed_at": int(time.time()),
-                },
-            ))
+            points.append(
+                PointStruct(
+                    id=self._pmid_to_uuid(a.pmid),
+                    vector=vec,
+                    payload={
+                        "pmid": a.pmid,
+                        "title": a.title,
+                        "abstract": a.abstract,
+                        "journal": a.journal,
+                        "year": a.year,
+                        "indexed_at": int(time.time()),
+                    },
+                )
+            )
         if points:
             await self.client.upsert(collection_name=COLLECTION, points=points)
         log.info("articles_upserted", count=len(points))
@@ -114,7 +116,6 @@ class VectorStore:
         fresh = [
             {**p.payload, "score": p.score}
             for p in results.points
-            if p.score >= min_score
-            and p.payload.get("indexed_at", 0) >= cutoff
+            if p.score >= min_score and p.payload.get("indexed_at", 0) >= cutoff
         ]
         return fresh

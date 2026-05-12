@@ -35,8 +35,7 @@ Rules:
 
 def _format_articles(articles: list[PubMedArticle]) -> str:
     return "\n\n".join(
-        f"ID: {a.pmid}\nTitle: {a.title}\nAbstract: {a.abstract[:500]}"
-        for a in articles
+        f"ID: {a.pmid}\nTitle: {a.title}\nAbstract: {a.abstract[:500]}" for a in articles
     )
 
 

@@ -5,9 +5,7 @@ from app.clients.pubmed import PubMedArticle
 
 
 def _article(pmid: str) -> PubMedArticle:
-    return PubMedArticle(
-        pmid=pmid, title="t", abstract="a", authors=[], journal="j", year="2024"
-    )
+    return PubMedArticle(pmid=pmid, title="t", abstract="a", authors=[], journal="j", year="2024")
 
 
 def _trial(nct: str) -> ClinicalTrial:

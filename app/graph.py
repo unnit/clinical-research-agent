@@ -1,18 +1,19 @@
 from contextlib import asynccontextmanager
 from time import time
 from typing import TypedDict
-from langgraph.graph import StateGraph, START, END
-import structlog
 
-from app.clients.pubmed import PubMedClient, PubMedArticle
-from app.clients.clinicaltrials import ClinicalTrialsClient, ClinicalTrial
-from app.agents.pico import decompose, PICO
+import structlog
+from langgraph.graph import END, START, StateGraph
+
+from app.agents.factcheck import FactCheckResult, factcheck
+from app.agents.pico import PICO, decompose
 from app.agents.screening import screen
-from app.agents.synthesis import synthesize, EvidenceReport
-from app.agents.factcheck import factcheck, FactCheckResult
-from app.vectorstore import VectorStore
-from app.tracing import node_span
+from app.agents.synthesis import EvidenceReport, synthesize
+from app.clients.clinicaltrials import ClinicalTrial, ClinicalTrialsClient
+from app.clients.pubmed import PubMedArticle, PubMedClient
 from app.streaming import ProgressQueue
+from app.tracing import node_span
+from app.vectorstore import VectorStore
 
 log = structlog.get_logger()
 
@@ -66,12 +67,14 @@ async def node_decompose(state: ResearchState) -> ResearchState:
         with node_span("decompose", {"question": state["question"]}) as span:
             pico = await decompose(state["question"])
             if span:
-                span.update(output={
-                    "population": pico.population,
-                    "intervention": pico.intervention,
-                    "outcome": pico.outcome,
-                    "search_terms": pico.search_terms,
-                })
+                span.update(
+                    output={
+                        "population": pico.population,
+                        "intervention": pico.intervention,
+                        "outcome": pico.outcome,
+                        "search_terms": pico.search_terms,
+                    }
+                )
             summary["population"] = pico.population
             summary["intervention"] = pico.intervention
             summary["n_search_terms"] = len(pico.search_terms)
@@ -118,11 +121,14 @@ async def node_search(state: ResearchState) -> ResearchState:
     cached = state.get("cached_articles", [])
 
     async with emit_progress(state, "search", cached_count=len(cached)) as summary:
-        with node_span("search", {
-            "terms": pico.search_terms,
-            "cached_count": len(cached),
-            "max_per_source": max_results,
-        }) as span:
+        with node_span(
+            "search",
+            {
+                "terms": pico.search_terms,
+                "cached_count": len(cached),
+                "max_per_source": max_results,
+            },
+        ) as span:
             # Start from cache
             articles_by_id: dict[str, PubMedArticle] = {a.pmid: a for a in cached}
             trials_by_id: dict[str, ClinicalTrial] = {}
@@ -175,13 +181,15 @@ async def node_search(state: ResearchState) -> ResearchState:
                 )
 
                 if span:
-                    span.update(output={
-                        "total_articles": len(articles_by_id),
-                        "new_fetched": len(new_articles),
-                        "from_cache": len(cached),
-                        "trials": len(trials_by_id),
-                        "skip_pubmed": skip_pubmed,
-                    })
+                    span.update(
+                        output={
+                            "total_articles": len(articles_by_id),
+                            "new_fetched": len(new_articles),
+                            "from_cache": len(cached),
+                            "trials": len(trials_by_id),
+                            "skip_pubmed": skip_pubmed,
+                        }
+                    )
 
                 summary["total_articles"] = len(articles_by_id)
                 summary["new_fetched"] = len(new_articles)
@@ -204,13 +212,14 @@ async def node_screen(state: ResearchState) -> ResearchState:
     n_trials = len(state.get("trials", []))
     log.info("node_screen", n_articles=n_articles, n_trials=n_trials)
 
-    async with emit_progress(
-        state, "screen", n_articles=n_articles, n_trials=n_trials
-    ) as summary:
-        with node_span("screen", {
-            "n_articles": n_articles,
-            "n_trials": n_trials,
-        }) as span:
+    async with emit_progress(state, "screen", n_articles=n_articles, n_trials=n_trials) as summary:
+        with node_span(
+            "screen",
+            {
+                "n_articles": n_articles,
+                "n_trials": n_trials,
+            },
+        ) as span:
             scores = await screen(
                 state["question"],
                 state.get("articles", []),
@@ -218,10 +227,12 @@ async def node_screen(state: ResearchState) -> ResearchState:
             )
             high_relevance = sum(1 for v in scores.values() if v >= 6)
             if span:
-                span.update(output={
-                    "scored": len(scores),
-                    "high_relevance": high_relevance,
-                })
+                span.update(
+                    output={
+                        "scored": len(scores),
+                        "high_relevance": high_relevance,
+                    }
+                )
             summary["scored"] = len(scores)
             summary["high_relevance"] = high_relevance
             return {"relevance": scores}
@@ -231,17 +242,11 @@ async def node_synthesize(state: ResearchState) -> ResearchState:
     scores = state.get("relevance", {})
     threshold = 6
 
-    top_articles = [
-        a for a in state.get("articles", []) if scores.get(a.pmid, 0) >= threshold
-    ]
-    top_trials = [
-        t for t in state.get("trials", []) if scores.get(t.nct_id, 0) >= threshold
-    ]
+    top_articles = [a for a in state.get("articles", []) if scores.get(a.pmid, 0) >= threshold]
+    top_trials = [t for t in state.get("trials", []) if scores.get(t.nct_id, 0) >= threshold]
 
     if len(top_articles) + len(top_trials) < 3:
-        all_items = [
-            ("article", a, scores.get(a.pmid, 0)) for a in state.get("articles", [])
-        ] + [
+        all_items = [("article", a, scores.get(a.pmid, 0)) for a in state.get("articles", [])] + [
             ("trial", t, scores.get(t.nct_id, 0)) for t in state.get("trials", [])
         ]
         all_items.sort(key=lambda x: x[2], reverse=True)
@@ -260,17 +265,22 @@ async def node_synthesize(state: ResearchState) -> ResearchState:
         kept_articles=len(top_articles),
         kept_trials=len(top_trials),
     ) as summary:
-        with node_span("synthesize", {
-            "kept_articles": len(top_articles),
-            "kept_trials": len(top_trials),
-        }) as span:
+        with node_span(
+            "synthesize",
+            {
+                "kept_articles": len(top_articles),
+                "kept_trials": len(top_trials),
+            },
+        ) as span:
             report = await synthesize(state["question"], top_articles, top_trials)
             if span:
-                span.update(output={
-                    "evidence_quality": report.evidence_quality,
-                    "key_findings_count": len(report.key_findings),
-                    "citations_count": len(report.citations),
-                })
+                span.update(
+                    output={
+                        "evidence_quality": report.evidence_quality,
+                        "key_findings_count": len(report.key_findings),
+                        "citations_count": len(report.citations),
+                    }
+                )
             summary["evidence_quality"] = report.evidence_quality
             summary["key_findings_count"] = len(report.key_findings)
             summary["citations_count"] = len(report.citations)
@@ -283,21 +293,26 @@ async def node_factcheck(state: ResearchState) -> ResearchState:
         "factcheck",
         citations_count=len(state["report"].citations),
     ) as summary:
-        with node_span("factcheck", {
-            "citations_count": len(state["report"].citations),
-        }) as span:
+        with node_span(
+            "factcheck",
+            {
+                "citations_count": len(state["report"].citations),
+            },
+        ) as span:
             result = factcheck(
                 state["report"],
                 state.get("articles", []),
                 state.get("trials", []),
             )
             if span:
-                span.update(output={
-                    "verified": result.verified,
-                    "valid_citations": len(result.valid_citations),
-                    "invalid_citations": len(result.invalid_citations),
-                    "unsupported_findings": len(result.unsupported_findings),
-                })
+                span.update(
+                    output={
+                        "verified": result.verified,
+                        "valid_citations": len(result.valid_citations),
+                        "invalid_citations": len(result.invalid_citations),
+                        "unsupported_findings": len(result.unsupported_findings),
+                    }
+                )
             summary["verified"] = result.verified
             summary["valid_citations"] = len(result.valid_citations)
             summary["invalid_citations"] = len(result.invalid_citations)

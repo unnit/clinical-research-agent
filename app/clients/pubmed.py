@@ -39,9 +39,7 @@ class PubMedClient:
         """Return list of PMIDs matching query."""
         resp = await self.client.get(
             f"{BASE_URL}/esearch.fcgi",
-            params=self._params(
-                db="pubmed", term=query, retmax=max_results, retmode="json"
-            ),
+            params=self._params(db="pubmed", term=query, retmax=max_results, retmode="json"),
         )
         resp.raise_for_status()
         return resp.json().get("esearchresult", {}).get("idlist", [])
@@ -53,9 +51,7 @@ class PubMedClient:
             return []
         resp = await self.client.get(
             f"{BASE_URL}/efetch.fcgi",
-            params=self._params(
-                db="pubmed", id=",".join(pmids), retmode="xml"
-            ),
+            params=self._params(db="pubmed", id=",".join(pmids), retmode="xml"),
         )
         resp.raise_for_status()
         return self._parse_articles(resp.text)
@@ -66,9 +62,7 @@ class PubMedClient:
         for art in root.findall(".//PubmedArticle"):
             pmid = art.findtext(".//PMID", default="")
             title = art.findtext(".//ArticleTitle", default="").strip()
-            abstract_parts = [
-                (e.text or "") for e in art.findall(".//Abstract/AbstractText")
-            ]
+            abstract_parts = [(e.text or "") for e in art.findall(".//Abstract/AbstractText")]
             abstract = " ".join(abstract_parts).strip()
             authors = []
             for a in art.findall(".//Author"):
@@ -82,10 +76,17 @@ class PubMedClient:
             for id_node in art.findall(".//ArticleId"):
                 if id_node.get("IdType") == "doi":
                     doi = id_node.text
-            articles.append(PubMedArticle(
-                pmid=pmid, title=title, abstract=abstract,
-                authors=authors, journal=journal, year=year, doi=doi,
-            ))
+            articles.append(
+                PubMedArticle(
+                    pmid=pmid,
+                    title=title,
+                    abstract=abstract,
+                    authors=authors,
+                    journal=journal,
+                    year=year,
+                    doi=doi,
+                )
+            )
         return articles
 
     async def search_and_fetch(self, query: str, max_results: int = 10) -> list[PubMedArticle]:
@@ -94,4 +95,3 @@ class PubMedClient:
 
     async def close(self):
         await self.client.aclose()
-

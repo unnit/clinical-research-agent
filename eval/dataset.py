@@ -3,6 +3,7 @@
 Each case has a question and a list of 'gold' source IDs that a strong system
 should retrieve and cite. Source IDs are PMIDs (PubMed) or NCT IDs (trials).
 """
+
 from pydantic import BaseModel
 
 
@@ -75,4 +76,3 @@ DATASET: list[EvalCase] = [
         notes="CREDENCE",
     ),
 ]
-

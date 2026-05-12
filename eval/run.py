@@ -1,4 +1,5 @@
 """Run the eval harness. Usage: python -m eval.run"""
+
 import asyncio
 import json
 from datetime import datetime
@@ -17,11 +18,13 @@ async def run_one(case) -> CaseScore:
             f"eval:{case.id}",
             {"question": case.question, "expected": case.expected_sources},
         ) as trace:
-            result = await graph.ainvoke({
-                "question": case.question,
-                "max_per_source": 10,
-                "trace_id": trace.id if trace else "",
-            })
+            result = await graph.ainvoke(
+                {
+                    "question": case.question,
+                    "max_per_source": 10,
+                    "trace_id": trace.id if trace else "",
+                }
+            )
 
             score = score_case(
                 case_id=case.id,
@@ -76,16 +79,13 @@ def summarize(scores: list[CaseScore]) -> dict:
         "completed": n_completed,
         "completion_rate": n_completed / n if n else 0.0,
         "avg_citation_validity": (
-            sum(s.citation_validity for s in completed) / n_completed
-            if n_completed else 0.0
+            sum(s.citation_validity for s in completed) / n_completed if n_completed else 0.0
         ),
         "avg_source_recall": (
-            sum(s.source_recall for s in completed) / n_completed
-            if n_completed else 0.0
+            sum(s.source_recall for s in completed) / n_completed if n_completed else 0.0
         ),
         "avg_source_recall_in_report": (
-            sum(s.source_recall_in_report for s in completed) / n_completed
-            if n_completed else 0.0
+            sum(s.source_recall_in_report for s in completed) / n_completed if n_completed else 0.0
         ),
     }
 
@@ -114,13 +114,17 @@ async def main():
     out_dir.mkdir(exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_file = out_dir / f"eval_{timestamp}.json"
-    out_file.write_text(json.dumps({
-        "summary": summary,
-        "cases": [s.model_dump() for s in scores],
-    }, indent=2))
+    out_file.write_text(
+        json.dumps(
+            {
+                "summary": summary,
+                "cases": [s.model_dump() for s in scores],
+            },
+            indent=2,
+        )
+    )
     print(f"\nResults saved to: {out_file}")
 
 
 if __name__ == "__main__":
     asyncio.run(main())
-

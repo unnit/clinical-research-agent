@@ -45,4 +45,3 @@ def score_case(
         source_recall=source_recall,
         source_recall_in_report=source_recall_in_report,
     )
-

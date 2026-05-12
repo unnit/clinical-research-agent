@@ -8,7 +8,9 @@ from app.llm import structured
 
 
 class Citation(BaseModel):
-    id: str = Field(..., description="Just the bare ID: '12345678' for PubMed or 'NCT01234567' for trials")
+    id: str = Field(
+        ..., description="Just the bare ID: '12345678' for PubMed or 'NCT01234567' for trials"
+    )
     source: Literal["pubmed", "clinicaltrials"]
     title: str
     url: str
@@ -17,8 +19,12 @@ class Citation(BaseModel):
 class EvidenceReport(BaseModel):
     question: str
     executive_summary: str = Field(..., description="2-3 sentence answer")
-    key_findings: list[str] = Field(..., description="3-6 bullet findings with citations like [PMID:12345]")
-    evidence_quality: str = Field(..., description="High / Moderate / Low / Very Low with one-line justification")
+    key_findings: list[str] = Field(
+        ..., description="3-6 bullet findings with citations like [PMID:12345]"
+    )
+    evidence_quality: str = Field(
+        ..., description="High / Moderate / Low / Very Low with one-line justification"
+    )
     limitations: list[str] = Field(default_factory=list)
     citations: list[Citation]
 

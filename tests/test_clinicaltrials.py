@@ -15,4 +15,3 @@ async def test_clinicaltrials_search():
         print(f"Status: {trials[0].status}")
     finally:
         await client.close()
-

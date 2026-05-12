@@ -14,8 +14,8 @@ from app.agents.pico import PICO
 from app.agents.synthesis import EvidenceReport
 from app.config import settings
 from app.graph import graph
-from app.streaming import ProgressQueue
 from app.redaction import redact_payload
+from app.streaming import ProgressQueue
 from app.tracing import trace_run
 from app.vectorstore import VectorStore
 
@@ -35,6 +35,7 @@ app = FastAPI(
     version="0.2.0",
     lifespan=lifespan,
 )
+
 
 class PIIRedactionMiddleware(BaseHTTPMiddleware):
     """Redact PII from JSON request bodies on routes that handle user input."""
@@ -92,11 +93,13 @@ async def health():
 async def research(req: ResearchRequest):
     async with trace_run("research", {"question": req.question}) as trace:
         try:
-            result = await graph.ainvoke({
-                "question": req.question,
-                "max_per_source": req.max_per_source,
-                "trace_id": trace.id if trace else "",
-            })
+            result = await graph.ainvoke(
+                {
+                    "question": req.question,
+                    "max_per_source": req.max_per_source,
+                    "trace_id": trace.id if trace else "",
+                }
+            )
         except Exception as e:
             log.error("research_failed", error=str(e))
             if trace:
@@ -104,12 +107,14 @@ async def research(req: ResearchRequest):
             raise HTTPException(status_code=500, detail=str(e)) from e
 
         if trace:
-            trace.update(output={
-                "summary": result["report"].executive_summary,
-                "evidence_quality": result["report"].evidence_quality,
-                "valid_citations": len(result["factcheck"].valid_citations),
-                "invalid_citations": len(result["factcheck"].invalid_citations),
-            })
+            trace.update(
+                output={
+                    "summary": result["report"].executive_summary,
+                    "evidence_quality": result["report"].evidence_quality,
+                    "valid_citations": len(result["factcheck"].valid_citations),
+                    "invalid_citations": len(result["factcheck"].invalid_citations),
+                }
+            )
 
         return ResearchResponse(
             pico=result["pico"],
@@ -160,12 +165,14 @@ async def research_stream(req: ResearchRequest):
     async def runner():
         try:
             async with trace_run("research_stream", {"question": req.question}) as trace:
-                result = await graph.ainvoke({
-                    "question": req.question,
-                    "max_per_source": req.max_per_source,
-                    "trace_id": trace.id if trace else "",
-                    "progress": pq,
-                })
+                result = await graph.ainvoke(
+                    {
+                        "question": req.question,
+                        "max_per_source": req.max_per_source,
+                        "trace_id": trace.id if trace else "",
+                        "progress": pq,
+                    }
+                )
                 # Final event with full payload
                 await pq.emit(
                     "complete",

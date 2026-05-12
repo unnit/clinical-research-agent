@@ -29,6 +29,7 @@ Rules for search_terms:
 Good examples: "SGLT2 inhibitors heart failure", "dapagliflozin HFpEF", "empagliflozin preserved ejection fraction"
 Bad examples: "Heart Failure, Diastolic"[Mesh] AND SGLT2, (dapagliflozin OR empagliflozin)[tiab]"""
 
+
 async def decompose(question: str) -> PICO:
     return await structured(
         [

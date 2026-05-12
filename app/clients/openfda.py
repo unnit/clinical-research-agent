@@ -38,14 +38,16 @@ class OpenFDAClient:
         results = []
         for r in data.get("results", []):
             openfda = r.get("openfda", {})
-            results.append(DrugLabel(
-                brand_name=(openfda.get("brand_name") or [None])[0],
-                generic_name=(openfda.get("generic_name") or [None])[0],
-                indications=" ".join(r.get("indications_and_usage", []))[:1500],
-                warnings=" ".join(r.get("warnings", []))[:1500],
-                adverse_reactions=" ".join(r.get("adverse_reactions", []))[:1500],
-                dosage=" ".join(r.get("dosage_and_administration", []))[:1500],
-            ))
+            results.append(
+                DrugLabel(
+                    brand_name=(openfda.get("brand_name") or [None])[0],
+                    generic_name=(openfda.get("generic_name") or [None])[0],
+                    indications=" ".join(r.get("indications_and_usage", []))[:1500],
+                    warnings=" ".join(r.get("warnings", []))[:1500],
+                    adverse_reactions=" ".join(r.get("adverse_reactions", []))[:1500],
+                    dosage=" ".join(r.get("dosage_and_administration", []))[:1500],
+                )
+            )
         return results
 
     async def close(self):

@@ -4,6 +4,7 @@ For production healthcare deployments, this should be replaced with
 Microsoft Presidio (https://microsoft.github.io/presidio/) which combines
 regex + NLP for higher recall on names, locations, and clinical IDs.
 """
+
 import re
 from typing import Any
 
@@ -12,8 +13,16 @@ PATTERNS: list[tuple[str, re.Pattern]] = [
     ("SSN", re.compile(r"\b\d{3}-\d{2}-\d{4}\b")),
     ("EMAIL", re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b")),
     ("PHONE", re.compile(r"\b(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b")),
-    ("MRN", re.compile(r"\b(?:MRN|Medical Record(?:\s+Number)?)[:\s#]*([A-Z0-9-]{4,})\b", re.IGNORECASE)),
-    ("DOB", re.compile(r"\b(?:DOB|Date of Birth)[:\s]*\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b", re.IGNORECASE)),
+    (
+        "MRN",
+        re.compile(
+            r"\b(?:MRN|Medical Record(?:\s+Number)?)[:\s#]*([A-Z0-9-]{4,})\b", re.IGNORECASE
+        ),
+    ),
+    (
+        "DOB",
+        re.compile(r"\b(?:DOB|Date of Birth)[:\s]*\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b", re.IGNORECASE),
+    ),
     ("DATE", re.compile(r"\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b")),
     # Credit cards (just in case)
     ("CREDIT_CARD", re.compile(r"\b(?:\d[ -]*?){13,16}\b")),
