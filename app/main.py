@@ -1,9 +1,11 @@
+import asyncio
 import json
 import logging
 from contextlib import asynccontextmanager
 
 import structlog
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -12,6 +14,7 @@ from app.agents.pico import PICO
 from app.agents.synthesis import EvidenceReport
 from app.config import settings
 from app.graph import graph
+from app.streaming import ProgressQueue
 from app.redaction import redact_payload
 from app.tracing import trace_run
 from app.vectorstore import VectorStore
@@ -148,3 +151,44 @@ async def library_stats():
         }
     finally:
         await vs.close()
+
+
+@app.post("/research/stream")
+async def research_stream(req: ResearchRequest):
+    pq = ProgressQueue()
+
+    async def runner():
+        try:
+            async with trace_run("research_stream", {"question": req.question}) as trace:
+                result = await graph.ainvoke({
+                    "question": req.question,
+                    "max_per_source": req.max_per_source,
+                    "trace_id": trace.id if trace else "",
+                    "progress": pq,
+                })
+                # Final event with full payload
+                await pq.emit(
+                    "complete",
+                    pico=result["pico"].model_dump(),
+                    report=result["report"].model_dump(),
+                    factcheck=result["factcheck"].model_dump(),
+                    counts={
+                        "articles_found": len(result.get("articles", [])),
+                        "trials_found": len(result.get("trials", [])),
+                    },
+                )
+        except Exception as e:
+            await pq.emit("error", error=str(e))
+        finally:
+            await pq.close()
+
+    asyncio.create_task(runner())
+
+    return StreamingResponse(
+        pq.events(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",  # disable nginx buffering
+        },
+    )
