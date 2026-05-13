@@ -126,3 +126,207 @@ Healthcare-adjacent context demands respect for PII. A FastAPI middleware redact
 | Data sources  | PubMed E-utilities, ClinicalTrials.gov v2, openFDA                  |
 | CI/CD         | GitHub Actions (lint, test, Docker build, auto-deploy to Lightsail) |
 | Deployment    | Docker Compose, Nginx (host + container), Cloudflare CDN            |
+
+---
+
+## 🔌 Endpoints
+
+| Method | Path                    | Purpose                                                           |
+| ------ | ----------------------- | ----------------------------------------------------------------- |
+| `POST` | `/research`             | Full pipeline (blocking); returns PICO, report, factcheck, counts |
+| `POST` | `/research/stream`      | Same pipeline as SSE; emits node-by-node progress + final result  |
+| `GET`  | `/library/search?q=...` | Semantic search over indexed articles                             |
+| `GET`  | `/library/stats`        | Cache stats (count, vector size, distance)                        |
+| `GET`  | `/health`               | Liveness check                                                    |
+
+Open `/docs` for the auto-generated Swagger UI.
+
+## 🧩 MCP server
+
+The `mcp_server.py` exposes three tools over the Model Context Protocol — usable from Claude Desktop, Cursor, Continue, or any MCP client.
+
+| Tool                | Signature                             | Description                                   |
+| ------------------- | ------------------------------------- | --------------------------------------------- |
+| `pubmed_search`     | `(query: str, max_results: int = 10)` | Search PubMed for biomedical literature       |
+| `trial_lookup`      | `(query: str, max_results: int = 10)` | Search ClinicalTrials.gov for clinical trials |
+| `drug_label_lookup` | `(drug_name: str)`                    | FDA-approved drug label info via openFDA      |
+
+To use with Claude Desktop, add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "clinical-research": {
+      "command": "/absolute/path/to/.venv/bin/python",
+      "args": ["/absolute/path/to/mcp_server.py"]
+    }
+  }
+}
+```
+
+---
+
+## 🚀 Local development
+
+**Prerequisites:** Python 3.11+, Node 20+, Docker, Docker Compose.
+
+### Backend + supporting services
+
+```bash
+git clone https://github.com/unnit/clinical-research-agent.git
+cd clinical-research-agent
+
+# Configure
+cp .env.example .env
+# Edit .env — add GEMINI_API_KEY (free at https://aistudio.google.com/apikey)
+# Optional: LANGFUSE_* for observability
+
+# Bring up app, Qdrant, Langfuse, Postgres
+docker compose up -d --build
+
+# Verify
+curl http://localhost:8000/health
+```
+
+The API is at `http://localhost:8000`. Langfuse UI at `http://localhost:3000` (sign in once, generate API keys, paste into `.env`, restart app).
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`.
+
+### Run tests
+
+```bash
+pytest tests/ -v
+```
+
+### Run the eval harness
+
+```bash
+python -m eval.run
+```
+
+Scores 10 curated clinical questions on citation validity, source recall, and synthesis recall. Results saved to `eval/results/` and pushed to Langfuse as scores.
+
+---
+
+## 🏭 Production deployment
+
+The repo includes `docker-compose.prod.yml` for deployment without self-hosted Langfuse (uses Langfuse Cloud).
+
+**Architecture in production:**
+
+```
+Cloudflare (TLS + CDN + DDoS)
+        ↓
+Lightsail Nginx (port 80, subdomain routing)
+        ↓
+Frontend container (Nginx + React build, port 8080)
+        ├── serves React static files
+        └── /api/* → backend container (port 8000, internal)
+                        ↓
+                    Qdrant container (port 6333, internal)
+                        ↓
+                 Langfuse Cloud (US region)
+```
+
+Three layers of routing; backend and Qdrant never exposed publicly. Lightsail firewall restricts inbound to Cloudflare IP ranges only.
+
+**Auto-deploy on push:** GitHub Actions runs lint → tests → Docker build → SSH-based deploy on every push to `main`. See `.github/workflows/ci.yml`.
+
+```bash
+# On the production host
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+---
+
+## 📊 Observability
+
+Every research run produces a single Langfuse trace with six nested spans (one per agent). Each LLM-using span has a nested generation observation capturing model, prompt, completion, token counts, latency, and cost.
+
+Typical numbers per run (Gemini 2.5 Flash-Lite):
+
+| Metric           | Value             |
+| ---------------- | ----------------- |
+| Total duration   | ~20 s             |
+| Total LLM tokens | ~9,700 (in + out) |
+| Total cost       | ~$0.002           |
+| Cache hit (warm) | ~7 s end-to-end   |
+
+---
+
+## ✅ Evaluation harness
+
+`eval/dataset.py` contains 10 curated clinical questions, each tagged with the landmark studies a strong system should find (e.g., EMPEROR-Preserved + DELIVER for SGLT2 in HFpEF).
+
+`eval/run.py` runs each question end-to-end and scores three metrics:
+
+- **Citation validity** — fraction of cited PMIDs/NCTs that exist in the retrieved sources (the fact-checker's verdict)
+- **Source recall (retrieval)** — fraction of expected landmark sources found by search
+- **Source recall (in report)** — fraction of expected landmarks actually cited in the final report
+
+Scores are pushed to Langfuse so quality can be tracked over time.
+
+---
+
+## 🗺️ Future work
+
+These are deliberate next steps, not unfinished pieces — the system shipped is intentionally scoped.
+
+- **Full-text RAG** beyond abstracts (PMC + chunking + larger context window)
+- **Conditional retries** — if fact-check fails, loop synthesis once with explicit "use only these citations" guidance
+- **Multi-LLM routing** — Haiku-class for screening, Sonnet-class for synthesis; cost-optimized per node
+- **Microsoft Presidio** in place of the regex PII redactor for higher recall on names and locations
+- **Blue-green deploys** — current CD has a brief restart window; zero-downtime deploys need 2× memory headroom
+- **MCP Registry publication** — packaging the MCP server as `pip install clinical-research-mcp` and submitting to the official MCP Registry, contingent on adding rate limiting and basic auth
+
+---
+
+## 📁 Repository structure
+
+```
+.
+├── app/                       # FastAPI backend
+│   ├── agents/                # PICO, screening, synthesis, factcheck
+│   ├── clients/               # PubMed, ClinicalTrials.gov, openFDA
+│   ├── graph.py               # LangGraph state machine (6 nodes)
+│   ├── streaming.py           # SSE event queue
+│   ├── tracing.py             # Langfuse integration
+│   ├── redaction.py           # PII redaction middleware
+│   ├── vectorstore.py         # Qdrant + Gemini embeddings
+│   └── main.py                # FastAPI app + routes
+├── frontend/                  # React + Vite + Tailwind UI
+│   ├── src/                   # Components and SSE hook
+│   ├── Dockerfile             # Multi-stage build (Node → Nginx)
+│   └── nginx.conf             # SPA fallback + /api reverse proxy
+├── eval/                      # Evaluation harness
+│   ├── dataset.py             # 10 curated clinical questions
+│   ├── metrics.py             # Scoring logic
+│   └── run.py                 # Runner
+├── tests/                     # pytest unit tests
+├── mcp_server.py              # Standalone MCP server
+├── docker-compose.yml         # Local dev stack
+├── docker-compose.prod.yml    # Production stack
+└── .github/workflows/ci.yml   # Lint + test + build + deploy
+```
+
+---
+
+## 📝 License
+
+MIT — see [LICENSE](LICENSE).
+
+---
+
+<div align="center">
+
+Built by [Dheeraj Thuvara](https://github.com/unnit)
+
+</div>
