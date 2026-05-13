@@ -1,7 +1,26 @@
 @import "tailwindcss";
 
+@theme {
+  --animate-placeholder-slide: placeholder-slide 0.5s
+    cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes placeholder-slide {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 :root {
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
   background: #0a0a0a;
   color: #e5e5e5;
 }

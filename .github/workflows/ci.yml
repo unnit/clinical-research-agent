@@ -62,6 +62,7 @@ jobs:
           host: ${{ secrets.LIGHTSAIL_HOST }}
           username: ${{ secrets.LIGHTSAIL_USER }}
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          debug: true
           script: |
             set -e
             cd ${{ secrets.LIGHTSAIL_APP_DIR }}
