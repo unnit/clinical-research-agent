@@ -41,7 +41,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100">
-      <div className="mx-auto max-w-6xl px-6 py-12">
+      <div className="mx-auto max-w-6xl px-3 py-12 sm:px-6">
         <header className="mb-8 flex items-start gap-4">
           <img
             src="/logo.svg"
