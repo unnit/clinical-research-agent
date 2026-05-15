@@ -63,7 +63,7 @@ function App() {
         <form onSubmit={handleSubmit} className="mb-8">
           <div className="relative">
             {!question && !isRunning && (
-              <div className="pointer-events-none absolute left-5 top-4 overflow-hidden">
+              <div className="pointer-events-none absolute left-5 right-5 top-4 overflow-hidden">
                 <span
                   key={placeholder}
                   className="block text-base text-neutral-600 animate-placeholder-slide"
