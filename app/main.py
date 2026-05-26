@@ -73,7 +73,7 @@ app.add_middleware(PIIRedactionMiddleware)
 
 
 class ResearchRequest(BaseModel):
-    question: str = Field(..., min_length=10, max_length=500)
+    question: str = Field(..., min_length=2, max_length=500)
     max_per_source: int = Field(8, ge=3, le=20)
 
 
