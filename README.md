@@ -23,11 +23,7 @@ Ask a clinical question → six specialized agents search PubMed, ClinicalTrials
 
 ## 📺 Demo
 
-> _Demo video coming soon — see `docs/demo.gif` for a preview._
-
-<!-- After recording: replace the line above with:
-![demo](docs/demo.gif)
--->
+https://github.com/user-attachments/assets/bd72823d-ad23-43ac-9478-2d4e89ee157c
 
 ---
 
